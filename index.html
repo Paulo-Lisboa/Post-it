@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Quadro de Notas</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    #notes { display: flex; flex-wrap: wrap; gap: 10px; }
+    .note {
+      width: 200px;
+      height: 200px;
+      background: #fffb88;
+      padding: 10px;
+      box-shadow: 2px 2px 5px #999;
+      border-radius: 8px;
+      position: relative;
+    }
+    .delete-btn {
+      background-color: #ff6666;
+      color: white;
+      border: none;
+      padding: 5px;
+      cursor: pointer;
+      border-radius: 50%;
+      font-weight: bold;
+      position: absolute;
+      top: 5px;
+      right: 5px;
+    }
+    textarea {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      resize: none;
+      font-family: sans-serif;
+      padding: 5px;
+    }
+    #form-container {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 200px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      box-sizing: border-box;
+    }
+    #form-container button {
+      padding: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #form-container button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h2>Quadro de Notas Compartilhado</h2>
+  <button onclick="showForm()">+ Nova Nota</button>
+  
+  <div id="form-container" style="display: none;">
+    <h3>Preencha os dados da nota</h3>
+    <textarea id="name" class="form-input" placeholder="Seu nome" rows="2"></textarea>
+    <textarea id="recipient" class="form-input" placeholder="Destinatário" rows="2"></textarea>
+    <button onclick="addNote()">Adicionar Nota</button>
+  </div>
+
+  <div id="notes"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+    // Cole aqui sua config do Firebase:
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoxn0QOkl2md3fE71vKHblldtbafhDVB0",
+      authDomain: "post-it-certtech.firebaseapp.com",
+      databaseURL: "https://post-it-certtech-default-rtdb.firebaseio.com",
+      projectId: "post-it-certtech",
+      storageBucket: "post-it-certtech.firebasestorage.app",
+      messagingSenderId: "241988625029",
+      appId: "1:241988625029:web:0ef641f6d3dacfb6a57fec",
+      measurementId: "G-P4VWGFERWV"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const notesContainer = document.getElementById("notes");
+
+    // Exibe o formulário de criação de nota
+    function showForm() {
+      document.getElementById("form-container").style.display = "flex";
+    }
+
+    // Função para obter a data e hora do Brasil (São Paulo)
+    function getCurrentDateTime() {
+      const options = { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      const date = new Date().toLocaleString('pt-BR', options);
+      return date;
+    }
+
+    // Função para adicionar uma nova nota
+    function addNote() {
+      const name = document.getElementById("name").value;
+      const recipient = document.getElementById("recipient").value;
+      const timestamp = getCurrentDateTime();
+      const text = `De: ${name}\nPara: ${recipient}\nData: ${timestamp}\n\n`;
+
+      const id = Date.now();
+      db.ref("notes/" + id).set({ text });
+
+      // Esconde o formulário
+      document.getElementById("form-container").style.display = "none";
+
+      // Limpa os campos
+      document.getElementById("name").value = "";
+      document.getElementById("recipient").value = "";
+    }
+
+    // Função para excluir uma nota
+    function deleteNote(id) {
+      db.ref("notes/" + id).remove();
+    }
+
+    // Função para criar o elemento de nota (com botão de excluir)
+    function createNoteElement(id, text) {
+      const note = document.createElement("div");
+      note.className = "note";
+      
+      // Botão de excluir
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "X";
+      deleteButton.className = "delete-btn";
+      deleteButton.onclick = () => deleteNote(id); // Exclui a nota
+      note.appendChild(deleteButton);
+
+      // Textarea para a nota
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.oninput = () => db.ref("notes/" + id).set({ text: textArea.value });
+      note.appendChild(textArea);
+
+      // Adiciona a nota ao container
+      notesContainer.appendChild(note);
+    }
+
+    // Escuta as alterações do Firebase e atualiza as notas
+    db.ref("notes").on("value", (snapshot) => {
+      const data = snapshot.val();
+
+      // Mapeia as notas que já existem
+      const currentNotes = {};
+      for (let note of notesContainer.children) {
+        currentNotes[note.dataset.id] = note;
+      }
+
+      // Remove notas que não estão mais no Firebase
+      for (let id in currentNotes) {
+        if (!data || !data[id]) {
+          currentNotes[id].remove();
+        }
+      }
+
+      // Atualiza ou adiciona as notas
+      for (let id in data) {
+        let noteEl = currentNotes[id];
+        if (!noteEl) {
+          noteEl = document.createElement("div");
+          noteEl.className = "note";
+          noteEl.dataset.id = id;
+
+          const deleteButton = document.createElement("button");
+          deleteButton.textContent = "X";
+          deleteButton.className = "delete-btn";
+          deleteButton.onclick = () => deleteNote(id);
+          noteEl.appendChild(deleteButton);
+
+          const textArea = document.createElement("textarea");
+          textArea.value = data[id].text;
+          textArea.oninput = () => db.ref("notes/" + id).set({ text: textArea.value });
+          noteEl.appendChild(textArea);
+
+          notesContainer.appendChild(noteEl);
+        }
+
+        if (noteEl !== document.activeElement) {
+          noteEl.querySelector("textarea").value = data[id].text;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
