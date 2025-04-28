@@ -128,41 +128,42 @@
       appId: "1:241988625029:web:0ef641f6d3dacfb6a57fec",
       measurementId: "G-P4VWGFERWV"
     };
-
+  
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const notesContainer = document.getElementById("notes");
-
+  
     function showForm() {
       document.getElementById("form-container").style.display = "flex";
     }
-
+  
     function getCurrentDateTime() {
       const options = { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
       return new Date().toLocaleString('pt-BR', options);
     }
-
+  
     function addNote() {
       const technician = document.getElementById("technician").value;
       const recipient = document.getElementById("recipient").value;
       const despacho = document.getElementById("despacho").value;
-
+  
       if (!technician || !recipient) {
         alert("Por favor, preencha todos os campos obrigatórios.");
         return;
       }
-
-      const timestamp = getCurrentDateTime();
-      const text = `${technician} despachou: \nCliente: ${recipient} \nData: ${timestamp} \nDespacho: ${despacho}\n\n${generateMessage(despacho)}`;
+  
+      const timestamp = Date.now(); // Salva o horário em timestamp numérico
+      const dateTimeFormatted = getCurrentDateTime();
+      const text = `${technician} despachou: \nCliente: ${recipient} \nData: ${dateTimeFormatted} \nDespacho: ${despacho}\n\n${generateMessage(despacho)}`;
       const id = Date.now();
-      db.ref("despachoClientes/" + id).set({ text, despacho });
-
+      db.ref("despachoClientes/" + id).set({ text, despacho, timestamp });
+  
       document.getElementById("form-container").style.display = "none";
       document.getElementById("technician").value = "";
       document.getElementById("recipient").value = "";
       document.getElementById("despacho").value = "Banho de Sal Grosso";
     }
-
+  
     function generateMessage(despacho) {
       const messages = {
         "Banho de Sal Grosso": "Despachando toda a energia negativa! Que a sabedoria finalmente encontre Wi-Fi no cérebro do cliente. 🧂😂",
@@ -176,55 +177,70 @@
       };
       return messages[despacho] || "Despacho com humor negro, feito com carinho! 😎";
     }
-
+  
     function deleteNote(id) {
       db.ref("despachoClientes/" + id).remove();
     }
-
+  
+    function removeOldNotes(data) {
+      const now = Date.now();
+      const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // 7 dias em milissegundos
+  
+      for (let id in data) {
+        const note = data[id];
+        if (note.timestamp && now - note.timestamp > sevenDaysInMs) {
+          deleteNote(id);
+        }
+      }
+    }
+  
     db.ref("despachoClientes").on("value", (snapshot) => {
       const data = snapshot.val();
       const currentNotes = {};
       for (let note of notesContainer.children) {
         currentNotes[note.dataset.id] = note;
       }
-
+  
       for (let id in currentNotes) {
         if (!data || !data[id]) {
           currentNotes[id].remove();
         }
       }
-
-      for (let id in data) {
-        const noteData = data[id];
-        let noteEl = currentNotes[id];
-
-        if (!noteEl) {
-          noteEl = document.createElement("div");
+  
+      if (data) {
+        removeOldNotes(data);
+        for (let id in data) {
+          const noteData = data[id];
+          let noteEl = currentNotes[id];
+  
+          if (!noteEl) {
+            noteEl = document.createElement("div");
+            noteEl.className = "note";
+            noteEl.dataset.id = id;
+  
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "X";
+            deleteButton.className = "delete-btn";
+            deleteButton.onclick = () => deleteNote(id);
+            noteEl.appendChild(deleteButton);
+  
+            const textArea = document.createElement("textarea");
+            textArea.className = "note-message";
+            textArea.value = noteData.text || "";
+            textArea.readOnly = true;
+            noteEl.appendChild(textArea);
+            notesContainer.appendChild(noteEl);
+          }
+  
+          const textArea = noteEl.querySelector("textarea");
+          if (document.activeElement !== textArea) {
+            textArea.value = noteData.text || "";
+          }
+  
           noteEl.className = "note";
-          noteEl.dataset.id = id;
-
-          const deleteButton = document.createElement("button");
-          deleteButton.textContent = "X";
-          deleteButton.className = "delete-btn";
-          deleteButton.onclick = () => deleteNote(id);
-          noteEl.appendChild(deleteButton);
-
-          const textArea = document.createElement("textarea");
-          textArea.className = "note-message";
-          textArea.value = noteData.text || "";
-          textArea.readOnly = true;
-          noteEl.appendChild(textArea);
-          notesContainer.appendChild(noteEl);
         }
-
-        const textArea = noteEl.querySelector("textarea");
-        if (document.activeElement !== textArea) {
-          textArea.value = noteData.text || "";
-        }
-
-        noteEl.className = "note";
       }
     });
-  </script>
+  </script>  
 </body>
 </html>
