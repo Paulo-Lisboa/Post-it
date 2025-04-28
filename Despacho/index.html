@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Nomes para Despacho</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    #notes { display: flex; flex-wrap: wrap; gap: 10px; }
+    .note {
+      width: 200px;
+      height: 200px;
+      padding: 10px;
+      box-shadow: 2px 2px 5px #999;
+      border-radius: 8px;
+      position: relative;
+    }
+    .note.normal { background: #d4edda; }
+    .note.attention { background: #fff3cd; }
+    .note.urgent { background: #f8d7da; }
+    .delete-btn {
+      background-color: #ff6666;
+      color: white;
+      border: none;
+      padding: 5px;
+      cursor: pointer;
+      border-radius: 50%;
+      font-weight: bold;
+      position: absolute;
+      top: 5px;
+      right: 5px;
+    }
+    textarea {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      resize: none;
+      font-family: sans-serif;
+      padding: 5px;
+      box-sizing: border-box;
+    }
+    #form-container {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 200px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      box-sizing: border-box;
+    }
+    #form-container button {
+      padding: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #form-container button:hover {
+      background-color: #45a049;
+    }
+    .note-message {
+      font-size: 14px;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+  <h2>Livro de Despachos do Suporte</h2>
+  <button onclick="showForm()">+ Despachar Cliente</button>
+
+  <div id="form-container" style="display: none;">
+    <h3>Preencha os dados</h3>
+    
+    <!-- Dropdown para nome do técnico (obrigatório) -->
+    <select id="technician" class="form-input" required>
+      <option value="" disabled selected>Selecione o Técnico</option>
+      <option value="AMANDA">AMANDA</option>
+      <option value="PAULO">PAULO</option>
+      <option value="VANESSA">VANESSA</option>
+      <option value="THAYNA">THAYNA</option>
+      <option value="ISRAEL">ISRAEL</option>
+      <option value="DUDU">DUDU</option>
+      <option value="GABRIEL">GABRIEL</option>
+      <option value="THAMIRYS">THAMIRYS</option>
+    </select>
+
+    <!-- Campo obrigatório para nome do cliente -->
+    <textarea id="recipient" class="form-input" placeholder="Nome do Cliente" rows="2" required></textarea>
+
+    <!-- Dropdown para tipo de despacho -->
+    <select id="despacho" class="form-input">
+      <option value="Banho de Sal Grosso">Banho de Sal Grosso</option>
+      <option value="Pomba-Gira da Paciência">Pomba-Gira da Paciência</option>
+      <option value="Amarração de Bom Senso">Amarração de Bom Senso</option>
+      <option value="Quebra do Encosto Mala">Quebra do Encosto Mala</option>
+      <option value="Ebó do Entendimento">Ebó do Entendimento</option>
+      <option value="Despacho de Calmaria">Despacho de Calmaria</option>
+      <option value="Banimento do Cliente Chato">Banimento do Cliente Chato</option>
+      <option value="Tranca Boca de Reclamação">Tranca Boca de Reclamação</option>
+    </select>
+
+    <button onclick="addNote()">Despachar Cliente</button>
+  </div>
+
+  <div id="notes"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoxn0QOkl2md3fE71vKHblldtbafhDVB0",
+      authDomain: "post-it-certtech.firebaseapp.com",
+      databaseURL: "https://post-it-certtech-default-rtdb.firebaseio.com",
+      projectId: "post-it-certtech",
+      storageBucket: "post-it-certtech.firebasestorage.app",
+      messagingSenderId: "241988625029",
+      appId: "1:241988625029:web:0ef641f6d3dacfb6a57fec",
+      measurementId: "G-P4VWGFERWV"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const notesContainer = document.getElementById("notes");
+
+    function showForm() {
+      document.getElementById("form-container").style.display = "flex";
+    }
+
+    function getCurrentDateTime() {
+      const options = { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      return new Date().toLocaleString('pt-BR', options);
+    }
+
+    function addNote() {
+      const technician = document.getElementById("technician").value;
+      const recipient = document.getElementById("recipient").value;
+      const despacho = document.getElementById("despacho").value;
+
+      if (!technician || !recipient) {
+        alert("Por favor, preencha todos os campos obrigatórios.");
+        return;
+      }
+
+      const timestamp = getCurrentDateTime();
+      const text = `${technician} despachou: \nCliente: ${recipient} \nData: ${timestamp} \nDespacho: ${despacho}\n\n${generateMessage(despacho)}`;
+      const id = Date.now();
+      db.ref("despachoClientes/" + id).set({ text, despacho });
+
+      document.getElementById("form-container").style.display = "none";
+      document.getElementById("technician").value = "";
+      document.getElementById("recipient").value = "";
+      document.getElementById("despacho").value = "Banho de Sal Grosso";
+    }
+
+    function generateMessage(despacho) {
+      const messages = {
+        "Banho de Sal Grosso": "Despachando toda a energia negativa! Que a sabedoria finalmente encontre Wi-Fi no cérebro do cliente. 🧂😂",
+        "Pomba-Gira da Paciência": "Que o mau humor desse cliente vire um charuto de calma, que nunca mais ele reclame sem motivo. 💨😈",
+        "Amarração de Bom Senso": "Que o cliente aprenda a lógica da vida e que as mensagens cheguem sem erro! ⛓️😎",
+        "Quebra do Encosto Mala": "Adeus, mal encosto! O cliente vai entender que cabo desconectado não é culpa do PDV. 💀👋",
+        "Ebó do Entendimento": "Espero que ele entenda que o sistema não é o problema e sim a rede de internet dele. 🧹📶",
+        "Despacho de Calmaria": "Agora vai: que o cliente se acalme antes de abrir a boca para mais reclamações. 🌊🌿",
+        "Banimento do Cliente Chato": "Despedido! Que o cliente fique preso no looping do atendimento eletrônico. 🔒😂",
+        "Tranca Boca de Reclamação": "Agora sim, a boca está trancada! Que a próxima crítica venha com evidências e foto do erro. 🔒🤐"
+      };
+      return messages[despacho] || "Despacho com humor negro, feito com carinho! 😎";
+    }
+
+    function deleteNote(id) {
+      db.ref("despachoClientes/" + id).remove();
+    }
+
+    db.ref("despachoClientes").on("value", (snapshot) => {
+      const data = snapshot.val();
+      const currentNotes = {};
+      for (let note of notesContainer.children) {
+        currentNotes[note.dataset.id] = note;
+      }
+
+      for (let id in currentNotes) {
+        if (!data || !data[id]) {
+          currentNotes[id].remove();
+        }
+      }
+
+      for (let id in data) {
+        const noteData = data[id];
+        let noteEl = currentNotes[id];
+
+        if (!noteEl) {
+          noteEl = document.createElement("div");
+          noteEl.className = "note";
+          noteEl.dataset.id = id;
+
+          const deleteButton = document.createElement("button");
+          deleteButton.textContent = "X";
+          deleteButton.className = "delete-btn";
+          deleteButton.onclick = () => deleteNote(id);
+          noteEl.appendChild(deleteButton);
+
+          const textArea = document.createElement("textarea");
+          textArea.className = "note-message";
+          textArea.value = noteData.text || "";
+          textArea.readOnly = true;
+          noteEl.appendChild(textArea);
+          notesContainer.appendChild(noteEl);
+        }
+
+        const textArea = noteEl.querySelector("textarea");
+        if (document.activeElement !== textArea) {
+          textArea.value = noteData.text || "";
+        }
+
+        noteEl.className = "note";
+      }
+    });
+  </script>
+</body>
+</html>
