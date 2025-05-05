@@ -241,6 +241,15 @@
         }
       }
     });
-  </script>  
+    // Verifica e remove notas antigas uma vez a cada 24 horas
+setInterval(() => {
+  db.ref("despachoClientes").once("value").then(snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      removeOldNotes(data);
+    }
+  });
+}, 24 * 60 * 60 * 1000); // 24 horas em milissegundos
+</script>  
 </body>
 </html>
