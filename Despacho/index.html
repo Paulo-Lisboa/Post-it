@@ -184,7 +184,7 @@
   
     function removeOldNotes(data) {
       const now = Date.now();
-      const sevenDaysInMs = 3 * 24 * 60 * 60 * 1000; // 7 dias em milissegundos
+      const sevenDaysInMs = 24 * 60 * 60 * 1000; // 1 dia em milissegundos
   
       for (let id in data) {
         const note = data[id];
