@@ -107,6 +107,7 @@
       <option value="Banimento do Cliente Chato">Banimento do Cliente Chato</option>
       <option value="Tranca Boca de Reclamação">Tranca Boca de Reclamação</option>
       <option value="Despacho de Paciência">Despacho de Paciência</option>
+
     </select>
 
     <button onclick="addNote()">Despachar Cliente</button>
@@ -166,19 +167,20 @@
     }
   
     function generateMessage(despacho) {
-      const messages = {
-        "Banho de Sal Grosso": "Despachando toda a energia negativa! Que a sabedoria finalmente encontre Wi-Fi no cérebro do cliente. 🧂😂",
-        "Pomba-Gira da Paciência": "Que o mau humor desse cliente vire um charuto de calma, que nunca mais ele reclame sem motivo. 💨😈",
-        "Amarração de Bom Senso": "Que a barra de progresso do seu bom senso finalmente chegue a 100%, mesmo que demore mais que uma instalação do Windows Millenium.! ⛓️😎",
-        "Quebra do Encosto Mala": "Adeus, mal encosto! O cliente vai entender que infraestrutura de rede não é culpa do sistema 💀👋",
-        "Ebó do Entendimento": "Espero que ele entenda que o sistema não é o problema e sim ele mesmo!. 🧹📶",
-        "Despacho de Calmaria": "Agora vai: que o cliente se acalme antes de abrir a boca para mais reclamações. 🌊🌿",
-        "Banimento do Cliente Chato": "Despachado direto pro setor de reclamações do inferno, onde o demônio é quem pede avaliação no final.😈📞",
-        "Tranca Boca de Reclamação": "Agora sim, a boca está trancada! Que a próxima crítica venha com evidências e foto do erro. 🔒🤐"
-        "Despacho de Paciência": "Que Deus sempre nos dê muita paciência e nunca força, porque se der força... 🙏🏼🙏🙏🏼"
-      };
-      return messages[despacho] || "Despacho com humor negro, feito com carinho! 😎";
-    }
+  const messages = {
+    "Banho de Sal Grosso": "Despachando toda a energia negativa! Que a sabedoria finalmente encontre Wi-Fi no cérebro do cliente. 🧂😂",
+    "Pomba-Gira da Paciência": "Que o mau humor desse cliente vire um charuto de calma, que nunca mais ele reclame sem motivo. 💨😈",
+    "Amarração de Bom Senso": "Que a barra de progresso do seu bom senso finalmente chegue a 100%, mesmo que demore mais que uma instalação do Windows Millenium.! ⛓️😎",
+    "Quebra do Encosto Mala": "Adeus, mal encosto! O cliente vai entender que infraestrutura de rede não é culpa do sistema 💀👋",
+    "Ebó do Entendimento": "Espero que ele entenda que o sistema não é o problema e sim ele mesmo!. 🧹📶",
+    "Despacho de Calmaria": "Agora vai: que o cliente se acalme antes de abrir a boca para mais reclamações. 🌊🌿",
+    "Banimento do Cliente Chato": "Despachado direto pro setor de reclamações do inferno, onde o demônio é quem pede avaliação no final.😈📞",
+    "Tranca Boca de Reclamação": "Agora sim, a boca está trancada! Que a próxima crítica venha com evidências e foto do erro. 🔒🤐",
+    "Despacho de Paciência": "Que Deus me dê muita paciência, porque se me der força... Sei não... 😂"
+  };
+  return messages[despacho] || "Despacho com humor negro, feito com carinho! 😎";
+}
+
   
     function deleteNote(id) {
       db.ref("despachoClientes/" + id).remove();
